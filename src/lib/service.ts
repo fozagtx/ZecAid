@@ -29,7 +29,9 @@ type PublicCard = Omit<AidCard, "accountUuid" | "pinHash"> & {
 };
 
 function publicCard(card: AidCard, balance: WalletBalance | null, settledSpentZatoshis: number): PublicCard {
-  const { accountUuid: _accountUuid, pinHash: _pinHash, ...visible } = card;
+  const { accountUuid, pinHash, ...visible } = card;
+  void accountUuid;
+  void pinHash;
   return { ...visible, balance, settledSpentZatoshis };
 }
 
@@ -140,7 +142,10 @@ export class ZecAidService {
       cards: data.cards.map((card, index) =>
         publicCard(card, cardBalances[index] ?? null, spent.get(card.id) ?? 0),
       ),
-      vendors: data.vendors.map(({ pairingCodeHash: _hash, ...vendor }) => vendor),
+      vendors: data.vendors.map(({ pairingCodeHash, ...vendor }) => {
+        void pairingCodeHash;
+        return vendor;
+      }),
       cardCount: data.cards.length,
       totalAllowanceZatoshis: data.cards.reduce((sum, card) => sum + card.allowanceZatoshis, 0),
       settledZatoshis: data.receipts
@@ -242,7 +247,8 @@ export class ZecAidService {
       data.vendors.unshift(vendor);
       appendAudit(data, "Vendor registered", `${vendor.name} added.`);
     });
-    const { pairingCodeHash: _hash, ...publicVendor } = vendor;
+    const { pairingCodeHash, ...publicVendor } = vendor;
+    void pairingCodeHash;
     return { vendor: publicVendor, pairingCode, pairingPath: `/pos/pair?code=${encodeURIComponent(pairingCode)}` };
   }
 

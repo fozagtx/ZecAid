@@ -1,4 +1,4 @@
-const CACHE_NAME = "zecaid-pos-v1";
+const CACHE_NAME = "zecaid-pos-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
@@ -20,14 +20,23 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
-  const isShell = url.pathname === "/pos" || url.pathname.startsWith("/_next/static/") || url.pathname === "/manifest.webmanifest";
-  if (!isShell) return;
+  const isStatic = url.pathname.startsWith("/_next/static/");
+  const isNavigation = request.mode === "navigate" || url.pathname === "/pos";
+  if (!isStatic && !isNavigation) return;
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
-    const cached = await cache.match(request);
-    if (cached) return cached;
-    const response = await fetch(request);
-    if (response.ok) await cache.put(request, response.clone());
-    return response;
+    if (isStatic) {
+      const cached = await cache.match(request);
+      if (cached) return cached;
+    }
+    try {
+      const response = await fetch(request);
+      if (response.ok) await cache.put(request, response.clone());
+      return response;
+    } catch {
+      const cached = await cache.match(request);
+      if (cached) return cached;
+      throw new Error("This page is not available offline.");
+    }
   })());
 });
