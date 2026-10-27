@@ -1,0 +1,9 @@
+{
+  "name": "ZecAid Vendor POS",
+  "short_name": "ZecAid POS",
+  "start_url": "/pos",
+  "display": "standalone",
+  "background_color": "#f6f4ee",
+  "theme_color": "#1f3d2b",
+  "description": "Offline Zcash aid allowance point of sale"
+}
