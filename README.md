@@ -4,7 +4,7 @@ ZecAid gives families a private testnet allowance on Zcash that vendors can acce
 
 ## Demo
 
-The narrated production demo is available at [docs/demo.mp4](docs/demo.mp4).
+Watch the 74.8-second narrated demo at [docs/demo.mp4](docs/demo.mp4).
 
 ## The problem
 
@@ -43,8 +43,8 @@ These transactions were confirmed on Zcash testnet. Transaction IDs are shown in
 | Treasury funding | `c0c3e93f7093b4ac7f628340304bf248f2d4ff2f6658367aa8f4bfdd694e52e4` | 4549045 |
 | Card funding | `45a85714f6df89b7b6e30a53f5d59f0634d88888e9542203dfeaa1b0cd2e7427` | 4549080 |
 | Vendor settlement | `42b4f2915e17bd448194bd71d1a479dc233fbbe8a03d2885abad1bbe67b53a78` | 4549111 |
-| Amina's household card funding | `cc85bf904bf3923150d70ba385bfe2670a75d2011d5de6b2e94d0fd1bed4b0cc` | 4549240 |
-| Amina's household settlement | `059c6cddab6c9ad4e8964b436e89c914cea02782a9a44f44f9421853de3dec3e` | 4549253 |
+| Household 0142 card funding | `cc85bf904bf3923150d70ba385bfe2670a75d2011d5de6b2e94d0fd1bed4b0cc` | 4549240 |
+| Household 0142 settlement | `059c6cddab6c9ad4e8964b436e89c914cea02782a9a44f44f9421853de3dec3e` | 4549253 |
 
 ## Features
 
