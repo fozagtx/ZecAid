@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
+import { DevtoolWallet } from "./devtool";
 import {
   parseAccountsOutput,
   parseBalanceOutput,
@@ -53,5 +54,51 @@ describe("zcash-devtool output parsers", () => {
     expect(parseSendTxid(
       "Sending transaction...\naf99f7e8ab76d9a02e0d5330ec2a9ae18d7bafc74010e40bb673ede6fb5f0a8d\n",
     )).toBe("af99f7e8ab76d9a02e0d5330ec2a9ae18d7bafc74010e40bb673ede6fb5f0a8d");
+  });
+});
+
+describe("DevtoolWallet synchronization", () => {
+  it("serializes concurrent syncs, honors the throttle, and allows forced syncs", async () => {
+    const wallet = new DevtoolWallet({ NODE_ENV: "test", ZECAID_LIGHTWALLETD_SERVER: "zecrocks" });
+    const execute = vi.spyOn(
+      wallet as unknown as { execute: (args: string[], stdin: string) => Promise<string> },
+      "execute",
+    ).mockResolvedValue("");
+
+    await Promise.all([wallet.sync(true), wallet.sync(true)]);
+    await wallet.sync();
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(execute.mock.calls[0][0]).toContain("sync");
+    expect(execute.mock.calls[0][0]).toContain("zecrocks");
+
+    await wallet.sync(true);
+    expect(execute).toHaveBeenCalledTimes(2);
+  });
+
+  it("syncs before sending and retries once after a zero-spendable failure", async () => {
+    const wallet = new DevtoolWallet({ NODE_ENV: "test", ZECAID_LIGHTWALLETD_SERVER: "zecrocks" });
+    const txid = "ab".repeat(32);
+    let sendCount = 0;
+    const execute = vi.spyOn(
+      wallet as unknown as { execute: (args: string[], stdin: string) => Promise<string> },
+      "execute",
+    ).mockImplementation(async (args) => {
+      if (args.includes("send")) {
+        sendCount += 1;
+        if (sendCount === 1) {
+          throw new Error("Insufficient balance (have 0, need 5110000 including fee)");
+        }
+        return txid;
+      }
+      return "";
+    });
+
+    await expect(wallet.send("account", "address", 5_100_000, "memo")).resolves.toBe(txid);
+    expect(execute.mock.calls.map(([args]) => args.includes("sync") ? "sync" : "send")).toEqual([
+      "sync",
+      "send",
+      "sync",
+      "send",
+    ]);
   });
 });

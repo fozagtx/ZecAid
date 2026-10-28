@@ -176,6 +176,33 @@ export class ZecAidService {
       throw new ZecAidError("Expiry must be a future date.", 400);
     }
 
+    const amountToFund = input.allowanceZatoshis + CARD_FEE_RESERVE;
+    await this.wallet.sync(true);
+    const balance = await this.wallet.getBalance(data.treasuryAccountUuid);
+    if (balance.spendableZatoshis < amountToFund) {
+      throw new ZecAidError("Treasury funds are still confirming; refresh the program before issuing this card.", 409);
+    }
+    let fee: number;
+    try {
+      fee = await this.wallet.estimateFee(
+        data.treasuryAccountUuid,
+        data.treasuryAddress ?? await this.wallet.getAddress(data.treasuryAccountUuid),
+        amountToFund,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/insufficient|spendable|confirm/i.test(message)) {
+        throw new ZecAidError(
+          "Treasury funds are still confirming; refresh the program before issuing this card.",
+          409,
+        );
+      }
+      throw error;
+    }
+    if (balance.spendableZatoshis < amountToFund + fee) {
+      throw new ZecAidError("Treasury funds are still confirming; refresh the program before issuing this card.", 409);
+    }
+
     const id = randomUUID();
     const pin = String(randomInt(100_000, 1_000_000));
     const account = await this.wallet.generateAccount(`card-${id.slice(0, 8)}`);
@@ -354,7 +381,7 @@ export class ZecAidService {
     const initial = await this.store.read();
     if (!initial.treasuryAccountUuid) throw new ZecAidError("Open the program before syncing.", 409);
     await this.wallet.sync();
-    const chainHeight = await this.wallet.getChainHeight().catch(() => initial.chainHeight);
+    const chainHeight = await this.wallet.getChainHeight();
     const cards = await this.store.read();
     const fundingUpdates = await Promise.all(
       cards.cards

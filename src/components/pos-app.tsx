@@ -102,7 +102,7 @@ export function PosApp() {
     if ("serviceWorker" in navigator) {
       void navigator.serviceWorker.register("/sw.js").then(async () => {
         await navigator.serviceWorker.ready;
-        const cache = await caches.open("zecaid-pos-v2");
+        const cache = await caches.open("zecaid-pos-v3");
         await cache.add("/pos").catch(() => undefined);
         const assets = performance.getEntriesByType("resource")
           .map((entry) => entry.name)

@@ -1,6 +1,6 @@
 "use client";
 
-import { get, set } from "idb-keyval";
+import { set } from "idb-keyval";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -14,6 +14,37 @@ type Pairing = {
   programName: string;
   privateKey: string;
 };
+
+type PairingWindow = Window & {
+  __zecaidPairingAttempts?: Map<string, Promise<Pairing>>;
+};
+
+async function pairDevice(pairingCode: string): Promise<Pairing> {
+  const browserWindow = window as PairingWindow;
+  const pairingAttempts = browserWindow.__zecaidPairingAttempts ??= new Map();
+  const existing = pairingAttempts.get(pairingCode);
+  if (existing) return existing;
+  const attempt = (async () => {
+    const keyPair = await createEd25519KeyPair();
+    const response = await fetch("/api/pos/pair", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ code: pairingCode, vendorPubKey: keyPair.publicKey }),
+    });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error ?? "Pairing failed.");
+    const result: Pairing = { ...body, privateKey: keyPair.privateKey };
+    await set(PAIRING_KEY, result);
+    return result;
+  })();
+  pairingAttempts.set(pairingCode, attempt);
+  try {
+    return await attempt;
+  } catch (error) {
+    if (pairingAttempts.get(pairingCode) === attempt) pairingAttempts.delete(pairingCode);
+    throw error;
+  }
+}
 
 export function PosPair() {
   const [message, setMessage] = useState("Connecting this device…");
@@ -33,22 +64,7 @@ export function PosPair() {
         return;
       }
       try {
-        const existing = await get<Pairing | undefined>(PAIRING_KEY);
-        if (existing) {
-          setPaired(existing);
-          setMessage("This device is already paired.");
-          return;
-        }
-        const keyPair = await createEd25519KeyPair();
-        const response = await fetch("/api/pos/pair", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ code: pairingCode, vendorPubKey: keyPair.publicKey }),
-        });
-        const body = await response.json();
-        if (!response.ok) throw new Error(body.error ?? "Pairing failed.");
-        const result: Pairing = { ...body, privateKey: keyPair.privateKey };
-        await set(PAIRING_KEY, result);
+        const result = await pairDevice(pairingCode);
         setPaired(result);
         setMessage("This device is paired.");
       } catch (cause) {

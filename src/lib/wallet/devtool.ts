@@ -224,9 +224,9 @@ export class DevtoolWallet {
     return typeof parsed.chain_tip_height === "number" ? parsed.chain_tip_height : null;
   }
 
-  async sync(): Promise<void> {
+  async sync(force = false): Promise<void> {
     if (this.syncInFlight) return this.syncInFlight;
-    if (Date.now() - this.lastSyncAt < 30_000) return;
+    if (!force && Date.now() - this.lastSyncAt < 30_000) return;
     this.syncInFlight = (async () => {
       await this.runWallet(["sync", "--server", this.server]);
       this.lastSyncAt = Date.now();
@@ -239,6 +239,23 @@ export class DevtoolWallet {
   }
 
   async send(
+    accountUuid: string,
+    to: string,
+    amountZatoshis: number,
+    memo: string,
+  ): Promise<string> {
+    await this.sync(true);
+    try {
+      return await this.sendOnce(accountUuid, to, amountZatoshis, memo);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!/Insufficient balance \(have 0/i.test(message)) throw error;
+      await this.sync(true);
+      return this.sendOnce(accountUuid, to, amountZatoshis, memo);
+    }
+  }
+
+  private async sendOnce(
     accountUuid: string,
     to: string,
     amountZatoshis: number,
