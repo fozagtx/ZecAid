@@ -7,6 +7,8 @@ import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from
 
 import { formatZec } from "@/lib/money";
 
+import { useNoirWallet } from "./noir-wallet";
+
 type Card = {
   id: string;
   label: string;
@@ -20,7 +22,7 @@ type Card = {
   settledSpentZatoshis: number;
   createdAt: string;
 };
-type Vendor = { id: string; name: string; unifiedAddress: string; publicKey: string | null; pairedAt: string | null };
+type Vendor = { id: string; name: string; unifiedAddress: string; payoutAddress?: string | null; publicKey: string | null; pairedAt: string | null };
 type Program = {
   opened: boolean;
   treasuryAddress: string | null;
@@ -131,7 +133,12 @@ function CopyButton({ value, label = "COPY" }: { value: string; label?: string }
 
 export function OverviewPage() {
   const { program, error, setError, loading, load } = useProgram();
+  const { state: walletState, sendTransaction } = useNoirWallet();
   const [busy, setBusy] = useState(false);
+  const [funding, setFunding] = useState(false);
+  const [fundAmount, setFundAmount] = useState("0.02");
+  const [fundTxid, setFundTxid] = useState("");
+  const [fundError, setFundError] = useState("");
   const [qrOpen, setQrOpen] = useState(true);
   async function openProgram() {
     setBusy(true);
@@ -152,6 +159,28 @@ export function OverviewPage() {
       setError(/binary|devtool|vault/i.test(message) ? "Program refresh failed. Check Settings for connection details." : message || "Could not refresh program.");
     }
     finally { setBusy(false); }
+  }
+  async function fundFromWallet(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!program?.treasuryAddress) return;
+    setFunding(true);
+    setFundError("");
+    setFundTxid("");
+    try {
+      const txid = await sendTransaction({
+        to: program.treasuryAddress,
+        amount: fundAmount,
+        memo: "ZecAid program funding",
+        fundingSource: "shielded",
+      });
+      setFundTxid(txid);
+      await api("/api/program/refresh", { method: "POST" });
+      await load();
+    } catch (cause) {
+      setFundError(cause instanceof Error ? cause.message : "Wallet funding could not be completed.");
+    } finally {
+      setFunding(false);
+    }
   }
   if (loading) return <div className="za-loading">Loading program status…</div>;
   if (!program) return <div className="za-alert">{error}</div>;
@@ -186,6 +215,15 @@ export function OverviewPage() {
               {qrOpen && program.treasuryAddress && <QrImage value={program.treasuryAddress} size={168} />}
               <code className="za-address">{program.treasuryAddress}</code>
               <div className="za-inline-actions"><CopyButton value={program.treasuryAddress ?? ""} /><a className="za-text-link" href="https://fauzec.com/" target="_blank" rel="noreferrer">OPEN FAUZEC ↗</a></div>
+              <form className="za-wallet-fund" onSubmit={fundFromWallet}>
+                <label>FUND FROM NOIR WALLET (ZEC)<input value={fundAmount} onChange={(event) => setFundAmount(event.target.value)} inputMode="decimal" pattern="^\d+(\.\d{1,8})?$" required /></label>
+                <button className="za-button za-button--green" disabled={funding || walletState !== "connected" || !program.treasuryAddress}>
+                  {funding ? "SENDING…" : "FUND FROM WALLET"}
+                </button>
+                {walletState !== "connected" && <p className="za-muted">Connect Noir Wallet above to fund the Treasury from your shielded balance.</p>}
+                {fundTxid && <p className="za-fund-txid"><span>TRANSACTION SENT</span><code>{fundTxid}</code></p>}
+                {fundError && <p className="za-alert" role="alert">{fundError}</p>}
+              </form>
               <p className="za-muted">Chain height {program.chainHeight ?? "—"} · Last sync {program.lastSyncAt ? new Date(program.lastSyncAt).toLocaleString() : "not synced yet"}</p>
             </section>
             <section className="za-panel">
@@ -317,7 +355,7 @@ async function register(event: FormEvent<HTMLFormElement>) {
       <form className="za-panel za-form" onSubmit={register}><Eyebrow>REGISTER VENDOR</Eyebrow><h2>Vendor details</h2><label>Vendor name<input value={name} onChange={(event) => setName(event.target.value)} placeholder="Market stall" required /></label><label>Testnet unified address<input value={address} onChange={(event) => setAddress(event.target.value)} placeholder="utest1…" required /></label><button className="za-button za-button--green">CREATE PAIRING LINK →</button><p className="za-muted">Payments settle to this address from each card’s Zcash account.</p></form>
       <section className="za-panel">{pairing ? <><Eyebrow>ONE-TIME PAIRING LINK</Eyebrow><h2>{pairing.vendor.name}</h2><p>Open this link on the vendor’s device while online. It can only be used once.</p><code className="za-address">{typeof window === "undefined" ? "" : window.location.origin}{pairing.pairingPath}</code><div className="za-inline-actions"><CopyButton value={`${typeof window === "undefined" ? "" : window.location.origin}${pairing.pairingPath}`} /><Link className="za-text-link" href={pairing.pairingPath}>OPEN PAIRING ↗</Link></div></> : <div className="za-empty-promo"><span className="za-promo-icon">02</span><Eyebrow>PAIR ONCE</Eyebrow><h2>Keep a vendor’s key on their device.</h2><p>The POS creates its own signing key. Vendor receipts cannot be forged by another device.</p></div>}</section>
     </div>
-    <section className="za-panel za-table-panel"><div className="za-panel-heading"><div><Eyebrow>REGISTERED VENDORS</Eyebrow><h2>Vendors</h2></div><span>{program?.vendors.length ?? 0} vendors</span></div>{!program?.vendors.length ? <div className="za-empty">No vendors registered yet.</div> : <div className="za-simple-list">{program.vendors.map((vendor) => <div className="za-list-row" key={vendor.id}><span><b>{vendor.name}</b><small>{vendor.unifiedAddress}</small></span><Status value={vendor.publicKey ? "paired" : "unpaired"} /><span>{vendor.pairedAt ? "POS paired" : "Waiting for pairing"}</span></div>)}</div>}</section>
+    <section className="za-panel za-table-panel"><div className="za-panel-heading"><div><Eyebrow>REGISTERED VENDORS</Eyebrow><h2>Vendors</h2></div><span>{program?.vendors.length ?? 0} vendors</span></div>{!program?.vendors.length ? <div className="za-empty">No vendors registered yet.</div> : <div className="za-simple-list">{program.vendors.map((vendor) => <div className="za-list-row" key={vendor.id}><span><b>{vendor.name}</b><small>Settles to {vendor.payoutAddress || vendor.unifiedAddress}</small></span><Status value={vendor.publicKey ? "paired" : "unpaired"} /><span>{vendor.pairedAt ? "POS paired" : "Waiting for pairing"}</span></div>)}</div>}</section>
   </>;
 }
 

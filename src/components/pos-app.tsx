@@ -20,6 +20,7 @@ type Pairing = {
   ngoPubKey: string;
   programName: string;
   privateKey: string;
+  payoutAddress?: string | null;
 };
 type LocalReceipt = ReceiptInput & { status: string; txid: string | null; reason: string | null };
 type Snapshot = {
@@ -288,7 +289,7 @@ export function PosApp() {
 
   return (
     <main className="za-pos">
-      <header className="za-pos-header"><Link className="za-wordmark" href="/"><span className="za-mark">z</span> zecaid</Link><div className={`za-network-indicator ${online ? "is-online" : "is-offline"}`}><i />{online ? "ONLINE" : "OFFLINE"}</div></header>
+      <header className="za-pos-header"><Link className="za-wordmark" href="/"><span className="za-mark">z</span> zecaid</Link><span className="za-pos-payout" title={pairing.payoutAddress ?? "Payout address unavailable"}>PAID TO {pairing.payoutAddress ?? "not set"}</span><div className={`za-network-indicator ${online ? "is-online" : "is-offline"}`}><i />{online ? "ONLINE" : "OFFLINE"}</div></header>
       <div className="za-pos-body">
         <div className="za-pos-title"><div><Eyebrow>{pairing.vendorName} · VENDOR POS</Eyebrow><h1>Accept a card.</h1></div><button className="za-button za-button--small" disabled={!online || busy} onClick={() => void sync()}>{busy ? "SYNCING…" : "SYNC RECEIPTS ↻"}</button></div>
         {error && <div className="za-alert">{error}</div>}

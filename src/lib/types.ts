@@ -35,6 +35,7 @@ export type Vendor = {
   id: string;
   name: string;
   unifiedAddress: string;
+  payoutAddress?: string | null;
   pairingCodeHash: string | null;
   publicKey: string | null;
   createdAt: string;

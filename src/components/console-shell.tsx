@@ -14,6 +14,8 @@ import {
   Store,
 } from "lucide-react";
 
+import { ConnectWalletButton, WalletProvider } from "./noir-wallet";
+
 const links = [
   { href: "/console", label: "Overview", icon: LayoutDashboard },
   { href: "/console/cards", label: "Cards", icon: CreditCard },
@@ -46,6 +48,7 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
   }
 
   return (
+    <WalletProvider>
     <div className={`za-console ${collapsed ? "is-collapsed" : ""}`}>
       <aside className="za-sidebar">
         <Link className="za-console-brand" href="/console" aria-label="ZecAid console">
@@ -73,10 +76,14 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
       <div className="za-console-main">
         <header className="za-console-topbar">
           <span>NGO CONSOLE <i>·</i> ZCASH TESTNET</span>
-          <Link href="/pos">VENDOR APP <b>↗</b></Link>
+          <div className="za-console-tools">
+            <ConnectWalletButton />
+            <Link href="/pos">VENDOR APP <b>↗</b></Link>
+          </div>
         </header>
         <div className="za-console-content">{children}</div>
       </div>
     </div>
+    </WalletProvider>
   );
 }

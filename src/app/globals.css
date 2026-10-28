@@ -616,6 +616,62 @@ a {
   color: var(--orange);
 }
 
+.za-console-tools,
+.za-wallet-connect {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.za-wallet-connect {
+  position: relative;
+}
+
+.za-wallet-action {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid #d8ddd6;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--green);
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  letter-spacing: .04em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.za-wallet-action:disabled {
+  cursor: wait;
+  opacity: .6;
+}
+
+.za-wallet-summary {
+  max-width: 260px;
+  overflow: hidden;
+  color: var(--green);
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.za-wallet-error {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 6px);
+  right: 0;
+  width: max-content;
+  max-width: min(320px, 80vw);
+  padding: 8px 10px;
+  border: 1px solid #e9c9bb;
+  border-radius: 4px;
+  background: #fff5f0;
+  color: #94442d;
+  font: 10px/1.5 var(--font-sans), sans-serif;
+  letter-spacing: 0;
+}
+
 .za-console-content {
   width: min(100%, 1470px);
   margin: 0 auto;
@@ -846,6 +902,55 @@ a {
   font-family: var(--font-mono), monospace;
   font-size: 9px;
   line-height: 1.7;
+}
+
+.za-wallet-fund {
+  display: grid;
+  gap: 9px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hairline);
+}
+
+.za-wallet-fund label {
+  display: grid;
+  gap: 7px;
+  color: #667166;
+  font: 9px var(--font-mono), monospace;
+  letter-spacing: .06em;
+}
+
+.za-wallet-fund input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #dcded6;
+  border-radius: 5px;
+  outline: none;
+  background: #fff;
+  color: #263129;
+  font: 13px var(--font-sans), sans-serif;
+}
+
+.za-wallet-fund input:focus {
+  border-color: #729076;
+  box-shadow: 0 0 0 3px rgba(31,61,43,.08);
+}
+
+.za-wallet-fund .za-muted {
+  margin: 0;
+}
+
+.za-fund-txid {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  color: var(--green);
+  font: 8px/1.5 var(--font-mono), monospace;
+}
+
+.za-fund-txid code {
+  overflow-wrap: anywhere;
 }
 
 .za-inline-actions,
@@ -1326,6 +1431,16 @@ a.za-list-row:hover b,
   font-size: 22px;
 }
 
+.za-pos-payout {
+  max-width: 56%;
+  overflow: hidden;
+  color: #697468;
+  font: 8px var(--font-mono), monospace;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .za-pos-header .za-mark {
   color: var(--green);
 }
@@ -1636,7 +1751,24 @@ a.za-list-row:hover b,
 
   .za-console-topbar {
     height: 54px;
+    gap: 8px;
     padding: 0 15px;
+    font-size: 7px;
+  }
+
+  .za-console-tools,
+  .za-wallet-connect {
+    gap: 6px;
+  }
+
+  .za-wallet-action {
+    min-height: 28px;
+    padding: 0 6px;
+    font-size: 7px;
+  }
+
+  .za-wallet-summary {
+    max-width: 92px;
     font-size: 7px;
   }
 

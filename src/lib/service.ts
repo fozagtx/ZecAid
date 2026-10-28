@@ -265,6 +265,7 @@ export class ZecAidService {
       id,
       name: input.name.trim(),
       unifiedAddress: input.unifiedAddress,
+      payoutAddress: null,
       pairingCodeHash: sha256(pairingCode),
       publicKey: null,
       createdAt: new Date().toISOString(),
@@ -279,13 +280,17 @@ export class ZecAidService {
     return { vendor: publicVendor, pairingCode, pairingPath: `/pos/pair?code=${encodeURIComponent(pairingCode)}` };
   }
 
-  async pairVendor(code: string, vendorPubKey: string): Promise<{
+  async pairVendor(code: string, vendorPubKey: string, payoutAddress?: string): Promise<{
     vendorId: string;
     vendorName: string;
     ngoPubKey: string;
     programName: string;
+    payoutAddress: string;
   }> {
     if (!/^[a-f0-9]{64}$/i.test(vendorPubKey)) throw new ZecAidError("Invalid vendor signing key.", 400);
+    if (payoutAddress !== undefined && !isUnifiedAddress(payoutAddress)) {
+      throw new ZecAidError("Enter a valid Zcash testnet payout address.", 400);
+    }
     const candidateHash = sha256(code);
     const paired = await this.store.update((data) => {
       const vendor = data.vendors.find(
@@ -293,10 +298,18 @@ export class ZecAidService {
       );
       if (!vendor) throw new ZecAidError("Pairing link is invalid or already used.", 404);
       vendor.publicKey = vendorPubKey.toLowerCase();
+      if (payoutAddress) {
+        vendor.payoutAddress = payoutAddress;
+        appendAudit(data, "Vendor payout address updated", `${vendor.name} payout address changed to ${payoutAddress}.`);
+      }
       vendor.pairingCodeHash = null;
       vendor.pairedAt = new Date().toISOString();
       appendAudit(data, "Vendor paired", `${vendor.name} paired a POS device.`);
-      return { id: vendor.id, name: vendor.name };
+      return {
+        id: vendor.id,
+        name: vendor.name,
+        payoutAddress: payoutAddress ?? vendor.payoutAddress ?? vendor.unifiedAddress,
+      };
     });
     const keys = await this.getNgoKeys();
     return {
@@ -304,6 +317,7 @@ export class ZecAidService {
       vendorName: paired.name,
       ngoPubKey: keys.publicKey,
       programName: "ZecAid",
+      payoutAddress: paired.payoutAddress,
     };
   }
 
@@ -451,9 +465,10 @@ export class ZecAidService {
           continue;
         }
         try {
+          const payoutAddress = vendor.payoutAddress ?? vendor.unifiedAddress;
           const fee = await this.wallet.estimateFee(
             currentCard.accountUuid,
-            vendor.unifiedAddress,
+            payoutAddress,
             receipt.amountZatoshis,
           );
           const balance = await this.wallet.getBalance(currentCard.accountUuid);
@@ -468,7 +483,7 @@ export class ZecAidService {
           }
           const txid = await this.wallet.send(
             currentCard.accountUuid,
-            vendor.unifiedAddress,
+            payoutAddress,
             receipt.amountZatoshis,
             `ZecAid receipt ${receipt.id.slice(0, 8)}`,
           );
