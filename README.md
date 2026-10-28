@@ -44,8 +44,7 @@ These transactions were confirmed on Zcash testnet. Transaction IDs are shown in
 | Card funding | `45a85714f6df89b7b6e30a53f5d59f0634d88888e9542203dfeaa1b0cd2e7427` | 4549080 |
 | Vendor settlement | `42b4f2915e17bd448194bd71d1a479dc233fbbe8a03d2885abad1bbe67b53a78` | 4549111 |
 | Amina's household card funding | `cc85bf904bf3923150d70ba385bfe2670a75d2011d5de6b2e94d0fd1bed4b0cc` | 4549240 |
-
-The recorded 0.01 ZEC settlement was broadcast as `059c6cddab6c9ad4e8964b436e89c914cea02782a9a44f44f9421853de3dec3e`; it remained unmined when checked and is not listed above as confirmed.
+| Amina's household settlement | `059c6cddab6c9ad4e8964b436e89c914cea02782a9a44f44f9421853de3dec3e` | 4549253 |
 
 ## Features
 
