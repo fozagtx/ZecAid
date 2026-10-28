@@ -37,11 +37,10 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=zcash-devtool-build /src/zcash-devtool/target/release/zcash-devtool /usr/local/bin/zcash-devtool
-COPY --from=app-build --chown=node:node /app/ ./
+COPY --from=app-build /app/ ./
 
-RUN mkdir -p /app/data && chown node:node /app/data
+RUN mkdir -p /app/data
 
 EXPOSE 43124
-USER node
 
 CMD ["sh", "-c", "./node_modules/.bin/next start -H 0.0.0.0 -p ${PORT:-43124}"]
