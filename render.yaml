@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: zecaid
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /
+    disk:
+      name: zecaid-data
+      mountPath: /app/data
+      sizeGB: 1

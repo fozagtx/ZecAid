@@ -81,6 +81,10 @@ These transactions were confirmed on Zcash testnet. Transaction IDs are shown in
 | `ZECAID_VAULT_DIR` | `./data/vault` | Local wallet and program vault; ignored by Git |
 | `ZECAID_LIGHTWALLETD_SERVER` | `zecrocks` (`testnet.zec.rocks`) | Zcash testnet lightwalletd server |
 
+## Deploy on Render
+
+In Render, choose **New → Blueprint**, select this repository, then click **Apply**. The blueprint creates a starter web service and a 1 GB disk at `/app/data`; no environment variables are needed. The wallet identity is generated on that disk. A fresh Treasury starts empty, so fund it from the testnet faucet using the Treasury QR.
+
 ## Trust model & limitations
 
 - The NGO operates the self-hosted server and holds the Treasury and allowance-account keys in its local `data/vault`. Recipients do not hold wallet keys.

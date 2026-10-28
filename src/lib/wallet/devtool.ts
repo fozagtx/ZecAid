@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { access, mkdir } from "node:fs/promises";
+import { access, chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
 
 import { ZCASH_TESTNET } from "../config";
@@ -152,6 +152,9 @@ export class DevtoolWallet {
         "--server",
         this.server,
       ], "\n");
+    }
+    if (await this.pathExists(this.identityPath)) {
+      await chmod(this.identityPath, 0o600);
     }
     const accounts = await this.listAccounts();
     const treasury = accounts.find((account) => account.name === "Treasury") ?? accounts[0];
